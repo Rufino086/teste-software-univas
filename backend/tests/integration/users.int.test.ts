@@ -46,3 +46,31 @@ describe('POST /api/users (API01)', () => {
     expect(await prisma.user.count()).toBe(1)
   })
 })
+
+describe('GET /api/users (API02)', () => {
+  beforeEach(async () => {
+    await resetDb()
+  })
+
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
+
+  it('API02 caso 1: inclui tarefas de cada usuário na lista', async () => {
+    const { user, category } = await seedUserAndCategory()
+    const task = await prisma.task.create({
+      data: { title: 'Entrega', userId: user.id, categoryId: category.id }
+    })
+
+    const res = await request(app).get('/api/users')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({
+      success: true,
+      count: 1,
+      data: [{ id: user.id, tasks: [{ id: task.id, title: 'Entrega' }] }]
+    })
+    expect(await prisma.user.count()).toBe(1)
+    expect(await prisma.task.count()).toBe(1)
+  })
+})
